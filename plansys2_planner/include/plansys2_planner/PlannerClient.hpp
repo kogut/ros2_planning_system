@@ -21,9 +21,11 @@
 
 #include "plansys2_planner/PlannerInterface.hpp"
 
+#include "plansys2_msgs/action/solve_plan.hpp"
 #include "plansys2_msgs/srv/get_plan.hpp"
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 
 namespace plansys2
 {
@@ -31,6 +33,9 @@ namespace plansys2
 class PlannerClient : public PlannerInterface
 {
 public:
+  using SolvePlan = plansys2_msgs::action::SolvePlan;
+  using GoalHandleSolvePlan = rclcpp_action::ServerGoalHandle<SolvePlan>;
+
   PlannerClient();
 
   std::optional<plansys2_msgs::msg::Plan> getPlan(
@@ -40,6 +45,7 @@ public:
 private:
   rclcpp::Client<plansys2_msgs::srv::GetPlan>::SharedPtr
     get_plan_client_;
+  rclcpp_action::Client<SolvePlan>::SharedPtr client_ptr_;
 
   rclcpp::Node::SharedPtr node_;
 };

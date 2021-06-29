@@ -1,0 +1,8 @@
+plansys2_msgs/Problem problem
+---
+bool success
+plansys2_msgs/Plan plan
+string error_info
+plansys2_msgs/PlanningInfo result_info
+---
+plansys2_msgs/PlanningInfo progress_info

@@ -1,0 +1,4 @@
+builtin_interfaces/Time start_stamp
+builtin_interfaces/Duration duration
+builtin_interfaces/Duration timeout
+float32 percent_timeout

@@ -18,7 +18,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Node.msg"
   "msg/Param.msg"
   "msg/Plan.msg"
+  "msg/PlanningInfo.msg"
   "msg/PlanItem.msg"
+  "msg/Problem.msg"
   "msg/Tree.msg"
   "srv/AddProblem.srv"
   "srv/AddProblemGoal.srv"
@@ -42,6 +44,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/RemoveProblemGoal.srv"
   "srv/ClearProblemKnowledge.srv"
   "action/ExecutePlan.action"
+  "action/SolvePlan.action"
   DEPENDENCIES builtin_interfaces std_msgs action_msgs
 )
 

@@ -37,6 +37,13 @@ PlannerNode::PlannerNode()
       &PlannerNode::get_plan_service_callback,
       this, std::placeholders::_1, std::placeholders::_2,
       std::placeholders::_3));
+  using namespace std::placeholders;
+  action_server_ = rclcpp_action::create_server<SolvePlan>(
+      this,
+      "solve_plan",
+      std::bind(&PlannerNode::handle_goal, this, _1, _2),
+      std::bind(&PlannerNode::handle_cancel, this, _1),
+      std::bind(&PlannerNode::handle_accepted, this, _1));
 
   declare_parameter("plan_solver_plugins", default_ids_);
 }
@@ -154,6 +161,54 @@ PlannerNode::get_plan_service_callback(
     response->success = false;
     response->error_info = "Plan not found";
   }
+
+
 }
+
+  rclcpp_action::GoalResponse PlannerNode::handle_goal(
+    const rclcpp_action::GoalUUID & uuid,
+    std::shared_ptr<const SolvePlan::Goal> goal)
+  {
+    RCLCPP_INFO(this->get_logger(), "Received goal request.");
+    (void)uuid;
+    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+  }
+
+  rclcpp_action::CancelResponse PlannerNode::handle_cancel(
+    const std::shared_ptr<GoalHandleSolvePlan> goal_handle)
+  {
+    RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
+    (void)goal_handle;
+    return rclcpp_action::CancelResponse::ACCEPT;
+  }
+
+  void PlannerNode::handle_accepted(const std::shared_ptr<GoalHandleSolvePlan> goal_handle)
+  {
+    using namespace std::placeholders;
+    // this needs to return quickly to avoid blocking the executor, so spin up a new thread
+    std::thread{std::bind(&PlannerNode::execute, this, _1), goal_handle}.detach();
+  }
+
+  void PlannerNode::execute(const std::shared_ptr<GoalHandleSolvePlan> goal_handle)
+  {
+    RCLCPP_INFO(this->get_logger(), "Executing goal");
+
+    const auto goal = goal_handle->get_goal();
+    auto plan = solvers_.begin()->second->getPlan(
+    goal->problem.domain, goal->problem.problem, get_namespace());
+    if (rclcpp::ok()) {
+      auto result = std::make_shared<SolvePlan::Result>();
+      result->plan = plan.value();
+      result->success = true;
+      goal_handle->succeed(result);
+      RCLCPP_INFO(this->get_logger(), "Goal succeeded");
+    }
+
+
+
+
+
+
+  }
 
 }  // namespace plansys2

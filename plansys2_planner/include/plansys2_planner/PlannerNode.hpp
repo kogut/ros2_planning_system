@@ -27,10 +27,11 @@
 
 #include "std_msgs/msg/empty.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
-#include "lifecycle_msgs/msg/transition.hpp"
+#include "plansys2_msgs/action/solve_plan.hpp"
 #include "plansys2_msgs/srv/get_plan.hpp"
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 #include "pluginlib/class_loader.hpp"
@@ -42,6 +43,10 @@ namespace plansys2
 class PlannerNode : public rclcpp_lifecycle::LifecycleNode
 {
 public:
+  using SolvePlan = plansys2_msgs::action::SolvePlan;
+  using GoalHandleSolvePlan = rclcpp_action::ServerGoalHandle<SolvePlan>;
+
+
   PlannerNode();
 
   using CallbackReturnT =
@@ -56,6 +61,11 @@ public:
   CallbackReturnT on_shutdown(const rclcpp_lifecycle::State & state);
   CallbackReturnT on_error(const rclcpp_lifecycle::State & state);
 
+  rclcpp_action::GoalResponse handle_goal(const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const SolvePlan::Goal> goal);
+  rclcpp_action::CancelResponse handle_cancel(const std::shared_ptr<GoalHandleSolvePlan> goal_handle);
+  void handle_accepted(const std::shared_ptr<GoalHandleSolvePlan> goal_handle);
+  void execute(const std::shared_ptr<GoalHandleSolvePlan> goal_handle);
+
   void get_plan_service_callback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<plansys2_msgs::srv::GetPlan::Request> request,
@@ -68,6 +78,8 @@ private:
   std::vector<std::string> default_types_;
   std::vector<std::string> solver_ids_;
   std::vector<std::string> solver_types_;
+
+  rclcpp_action::Server<SolvePlan>::SharedPtr action_server_;
 
   rclcpp::Service<plansys2_msgs::srv::GetPlan>::SharedPtr
     get_plan_service_;
