@@ -36,17 +36,17 @@ PlannerClient::getPlan(
   const std::string & domain, const std::string & problem,
   const std::string & node_namespace)
 {
-    if (!client_ptr_->wait_for_action_server(std::chrono::seconds(30))) {
-       RCLCPP_ERROR(node_->get_logger(), "Action server not available after waiting");
-       return {};
-     }
+  if (!client_ptr_->wait_for_action_server(std::chrono::seconds(30))) {
+    RCLCPP_ERROR(node_->get_logger(), "Action server not available after waiting");
+    return {};
+  }
 
-     auto goal_msg = SolvePlan::Goal();
-     goal_msg.problem.domain = domain;
-     goal_msg.problem.problem = problem;
+  auto goal_msg = SolvePlan::Goal();
+  goal_msg.problem.domain = domain;
+  goal_msg.problem.problem = problem;
 
-     RCLCPP_INFO(node_->get_logger(), "Sending goal");
-     auto send_goal_options = rclcpp_action::Client<SolvePlan>::SendGoalOptions();
+  RCLCPP_INFO(node_->get_logger(), "Sending goal");
+  auto send_goal_options = rclcpp_action::Client<SolvePlan>::SendGoalOptions();
 //  50    send_goal_options.goal_response_callback =
 //  51      std::bind(&FibonacciActionClient::goal_response_callback, this, _1);
 //  52    send_goal_options.feedback_callback =
@@ -56,11 +56,11 @@ PlannerClient::getPlan(
 
   auto future_goal = client_ptr_->async_send_goal(goal_msg, send_goal_options);
 
-if (rclcpp::spin_until_future_complete(node_, future_goal)
-    != rclcpp::executor::FutureReturnCode::SUCCESS)
-{
-  RCLCPP_ERROR(node_->get_logger(), "Failed");
-}
+  if (rclcpp::spin_until_future_complete(node_, future_goal) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_ERROR(node_->get_logger(), "Failed");
+  }
 
 // if (future_goal.wait_for(std::chrono::seconds(5)) == std::future_status::timeout)
 //   {
@@ -70,7 +70,7 @@ if (rclcpp::spin_until_future_complete(node_, future_goal)
 
   auto goal_handle = future_goal.get();
 
-  auto future_result =  client_ptr_->async_get_result(goal_handle);
+  auto future_result = client_ptr_->async_get_result(goal_handle);
 
   // while (!get_plan_client_->wait_for_service(std::chrono::seconds(30))) {
   //   if (!rclcpp::ok()) {
@@ -88,22 +88,22 @@ if (rclcpp::spin_until_future_complete(node_, future_goal)
 
   // auto future_result = get_plan_client_->async_send_request(request);
   RCLCPP_ERROR(node_->get_logger(), "Got here");
-   if (rclcpp::spin_until_future_complete(node_, future_result, std::chrono::seconds(15)) !=
-     rclcpp::FutureReturnCode::SUCCESS)
-   {
-     return {};
-   }
+  if (rclcpp::spin_until_future_complete(node_, future_result, std::chrono::seconds(15)) !=
+    rclcpp::FutureReturnCode::SUCCESS)
+  {
+    return {};
+  }
   RCLCPP_ERROR(node_->get_logger(), "And here");
 
-   if (future_result.get().result->success) {
-       RCLCPP_ERROR(node_->get_logger(), "Got plan");
+  if (future_result.get().result->success) {
+    RCLCPP_ERROR(node_->get_logger(), "Got plan");
 
-     return future_result.get().result->plan;
-   } else {
-      RCLCPP_ERROR(node_->get_logger(), "Nope");
+    return future_result.get().result->plan;
+  } else {
+    RCLCPP_ERROR(node_->get_logger(), "Nope");
 
-     return {};
-   }
+    return {};
+  }
 }
 
 }  // namespace plansys2
