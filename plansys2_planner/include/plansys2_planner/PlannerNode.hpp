@@ -46,7 +46,6 @@ public:
   using SolvePlan = plansys2_msgs::action::SolvePlan;
   using GoalHandleSolvePlan = rclcpp_action::ServerGoalHandle<SolvePlan>;
 
-
   PlannerNode();
 
   using CallbackReturnT =
@@ -69,11 +68,6 @@ public:
   void handle_accepted(const std::shared_ptr<GoalHandleSolvePlan> goal_handle);
   void execute(const std::shared_ptr<GoalHandleSolvePlan> goal_handle);
 
-  void get_plan_service_callback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<plansys2_msgs::srv::GetPlan::Request> request,
-    const std::shared_ptr<plansys2_msgs::srv::GetPlan::Response> response);
-
 private:
   pluginlib::ClassLoader<plansys2::PlanSolverBase> lp_loader_;
   SolverMap solvers_;
@@ -83,9 +77,6 @@ private:
   std::vector<std::string> solver_types_;
 
   rclcpp_action::Server<SolvePlan>::SharedPtr action_server_;
-
-  rclcpp::Service<plansys2_msgs::srv::GetPlan>::SharedPtr
-    get_plan_service_;
 };
 
 template<typename NodeT>

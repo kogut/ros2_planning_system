@@ -26,8 +26,6 @@ namespace plansys2
 PlannerClient::PlannerClient()
 {
   node_ = rclcpp::Node::make_shared("planner_client");
-
-  get_plan_client_ = node_->create_client<plansys2_msgs::srv::GetPlan>("planner/get_plan");
   client_ptr_ = rclcpp_action::create_client<SolvePlan>(node_, "solve_plan");
 }
 
@@ -45,14 +43,14 @@ PlannerClient::getPlan(
   goal_msg.problem.domain = domain;
   goal_msg.problem.problem = problem;
 
-  RCLCPP_INFO(node_->get_logger(), "Sending goal");
+  RCLCPP_INFO(node_->get_logger(), "Sending planning problem to planner node.");
   auto send_goal_options = rclcpp_action::Client<SolvePlan>::SendGoalOptions();
   auto future_goal = client_ptr_->async_send_goal(goal_msg, send_goal_options);
 
   if (rclcpp::spin_until_future_complete(node_, future_goal) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    RCLCPP_ERROR(node_->get_logger(), "Goal not accepted by planner action server.");
+    RCLCPP_ERROR(node_->get_logger(), "Planning problem not accepted by planner action server.");
   }
 
   auto goal_handle = future_goal.get();

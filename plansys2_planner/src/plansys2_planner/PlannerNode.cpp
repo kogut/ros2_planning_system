@@ -31,12 +31,6 @@ PlannerNode::PlannerNode()
   default_ids_{},
   default_types_{}
 {
-  get_plan_service_ = create_service<plansys2_msgs::srv::GetPlan>(
-    "planner/get_plan",
-    std::bind(
-      &PlannerNode::get_plan_service_callback,
-      this, std::placeholders::_1, std::placeholders::_2,
-      std::placeholders::_3));
   using namespace std::placeholders;
   action_server_ = rclcpp_action::create_server<SolvePlan>(
     this,
@@ -144,30 +138,11 @@ PlannerNode::on_error(const rclcpp_lifecycle::State & state)
   return CallbackReturnT::SUCCESS;
 }
 
-
-void
-PlannerNode::get_plan_service_callback(
-  const std::shared_ptr<rmw_request_id_t> request_header,
-  const std::shared_ptr<plansys2_msgs::srv::GetPlan::Request> request,
-  const std::shared_ptr<plansys2_msgs::srv::GetPlan::Response> response)
-{
-  auto plan = solvers_.begin()->second->getPlan(
-    request->domain, request->problem, get_namespace());
-
-  if (plan) {
-    response->success = true;
-    response->plan = plan.value();
-  } else {
-    response->success = false;
-    response->error_info = "Plan not found";
-  }
-}
-
 rclcpp_action::GoalResponse PlannerNode::handle_goal(
   const rclcpp_action::GoalUUID & uuid,
   std::shared_ptr<const SolvePlan::Goal> goal)
 {
-  RCLCPP_INFO(this->get_logger(), "Received goal request.");
+  RCLCPP_INFO(this->get_logger(), "Received planning request.");
   (void)uuid;
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
@@ -175,9 +150,10 @@ rclcpp_action::GoalResponse PlannerNode::handle_goal(
 rclcpp_action::CancelResponse PlannerNode::handle_cancel(
   const std::shared_ptr<GoalHandleSolvePlan> goal_handle)
 {
-  RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
+  RCLCPP_WARN(
+    this->get_logger(), "Received request to cancel, but cancelling not currently supported.");
   (void)goal_handle;
-  return rclcpp_action::CancelResponse::ACCEPT;
+  return rclcpp_action::CancelResponse::REJECT;
 }
 
 void PlannerNode::handle_accepted(const std::shared_ptr<GoalHandleSolvePlan> goal_handle)
@@ -189,7 +165,7 @@ void PlannerNode::handle_accepted(const std::shared_ptr<GoalHandleSolvePlan> goa
 
 void PlannerNode::execute(const std::shared_ptr<GoalHandleSolvePlan> goal_handle)
 {
-  RCLCPP_INFO(this->get_logger(), "Executing goal");
+  RCLCPP_INFO(this->get_logger(), "Attempting plan generation.");
 
   const auto goal = goal_handle->get_goal();
   auto plan = solvers_.begin()->second->getPlan(
@@ -200,7 +176,7 @@ void PlannerNode::execute(const std::shared_ptr<GoalHandleSolvePlan> goal_handle
       result->plan = plan.value();
       result->success = true;
       goal_handle->succeed(result);
-      RCLCPP_INFO(this->get_logger(), "Goal succeeded");
+      RCLCPP_INFO(this->get_logger(), "Plan generation succeeded.");
     } else {
       result->success = false;
       goal_handle->abort(result);
