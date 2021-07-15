@@ -196,10 +196,15 @@ void PlannerNode::execute(const std::shared_ptr<GoalHandleSolvePlan> goal_handle
     goal->problem.domain, goal->problem.problem, get_namespace());
   if (rclcpp::ok()) {
     auto result = std::make_shared<SolvePlan::Result>();
-    result->plan = plan.value();
-    result->success = true;
-    goal_handle->succeed(result);
-    RCLCPP_INFO(this->get_logger(), "Goal succeeded");
+    if (plan.has_value()) {
+      result->plan = plan.value();
+      result->success = true;
+      goal_handle->succeed(result);
+      RCLCPP_INFO(this->get_logger(), "Goal succeeded");
+    } else {
+      result->success = false;
+      goal_handle->abort(result);
+    }
   }
 }
 

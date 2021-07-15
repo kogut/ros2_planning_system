@@ -47,61 +47,30 @@ PlannerClient::getPlan(
 
   RCLCPP_INFO(node_->get_logger(), "Sending goal");
   auto send_goal_options = rclcpp_action::Client<SolvePlan>::SendGoalOptions();
-//  50    send_goal_options.goal_response_callback =
-//  51      std::bind(&FibonacciActionClient::goal_response_callback, this, _1);
-//  52    send_goal_options.feedback_callback =
-//  53      std::bind(&FibonacciActionClient::feedback_callback, this, _1, _2);
-//  54    send_goal_options.result_callback =jj
-//  55      std::bind(&FibonacciActionClient::result_callback, this, _1);
-
   auto future_goal = client_ptr_->async_send_goal(goal_msg, send_goal_options);
 
   if (rclcpp::spin_until_future_complete(node_, future_goal) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    RCLCPP_ERROR(node_->get_logger(), "Failed");
+    RCLCPP_ERROR(node_->get_logger(), "Goal not accepted by planner action server.");
   }
 
-// if (future_goal.wait_for(std::chrono::seconds(5)) == std::future_status::timeout)
-//   {
-//     RCLCPP_ERROR_STREAM(node_->get_logger(), "Timed out waiting for goal response callback");
-//     return {};
-//   }
-
   auto goal_handle = future_goal.get();
-
   auto future_result = client_ptr_->async_get_result(goal_handle);
 
-  // while (!get_plan_client_->wait_for_service(std::chrono::seconds(30))) {
-  //   if (!rclcpp::ok()) {
-  //     return {};
-  //   }
-  //   RCLCPP_ERROR_STREAM(
-  //     node_->get_logger(),
-  //     get_plan_client_->get_service_name() <<
-  //       " service  client: waiting for service to appear...");
-  // }
-
-  // auto request = std::make_shared<plansys2_msgs::srv::GetPlan::Request>();
-  // request->domain = domain;
-  // request->problem = problem;
-
-  // auto future_result = get_plan_client_->async_send_request(request);
-  RCLCPP_ERROR(node_->get_logger(), "Got here");
   if (rclcpp::spin_until_future_complete(node_, future_result, std::chrono::seconds(15)) !=
     rclcpp::FutureReturnCode::SUCCESS)
   {
+    RCLCPP_ERROR(node_->get_logger(), "Action server timed out or could not generate a plan.");
     return {};
   }
-  RCLCPP_ERROR(node_->get_logger(), "And here");
 
   if (future_result.get().result->success) {
-    RCLCPP_ERROR(node_->get_logger(), "Got plan");
+    RCLCPP_INFO(node_->get_logger(), "Plan successfully generated.");
 
     return future_result.get().result->plan;
   } else {
-    RCLCPP_ERROR(node_->get_logger(), "Nope");
-
+    RCLCPP_ERROR(node_->get_logger(), "Action server did not produce a valid plan.");
     return {};
   }
 }
